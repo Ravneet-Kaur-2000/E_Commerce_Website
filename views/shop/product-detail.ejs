@@ -1,0 +1,16 @@
+<!-- click on the item to see about it -->
+<%- include('../includes/head.ejs') %>
+    <link rel="stylesheet" href="/css/product.css">
+</head>
+<%- include('../includes/navbar.ejs') %>
+<main class="centered">
+    <h1><%= product.title %></h1>
+    <hr>
+    <div>
+        <img src="<%= product.imageUrl %>" alt="<%= product.title %>">
+    </div>
+    <h2><%= product.price %></h2>
+    <p><%= product.description %></p>
+    <%- include('../includes/add-to-cart.ejs',{product:product}) %>
+</main>
+<%- include('../includes/end.ejs') %>
