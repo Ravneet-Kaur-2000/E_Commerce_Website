@@ -5,14 +5,15 @@ const { postDeleteProducts } = require('../controllers/admin');
 const router = express.Router();
 
 const shopControllers= require('../controllers/shop');
+const isAuth=require('../middleware/is-auth');
 
 router.get('/',shopControllers.getIndex);
-router.get('/cart',shopControllers.getCart);
-router.post('/cart',shopControllers.postCart);
+router.get('/cart',isAuth,shopControllers.getCart);
+router.post('/cart',isAuth,shopControllers.postCart);
 router.get('/products',shopControllers.getProducts);
 router.get('/products/:productId',shopControllers.getProduct);
-router.post('/cart-delete-item',shopControllers.postCartDeleteProducts);
-router.get('/orders',shopControllers.getOrders);
-router.post('/create-order',shopControllers.postOrder)
+router.post('/cart-delete-item',isAuth,shopControllers.postCartDeleteProducts);
+router.get('/orders',isAuth,shopControllers.getOrders);
+router.post('/create-order',isAuth,shopControllers.postOrder)
 
 module.exports=router;
