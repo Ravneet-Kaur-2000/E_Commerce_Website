@@ -7,11 +7,7 @@ require('dotenv').config();
 const nodemailer=require('nodemailer')
 const sendgridTransport=require('nodemailer-sendgrid-transport')
 
-const transporter=nodemailer.createTransport(sendgridTransport({
-    auth:{
-        api_key:'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'
-    }
-}))
+
 
 exports.getLogin = (req,res,next) => {
     let message=req.flash('error');
