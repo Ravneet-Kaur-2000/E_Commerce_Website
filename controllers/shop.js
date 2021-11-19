@@ -88,7 +88,7 @@ exports.postOrder=(req,res,next)=>{
             });
             const order=new Order({
                 user:{
-                    name:req.user.name,
+                    email:req.user.email,
                     userId:req.user
                 },
                 products:products
@@ -101,7 +101,7 @@ exports.postOrder=(req,res,next)=>{
     .then(()=>{
         res.redirect('/orders');
     })
-    .catch(err=>console.log(error))
+    .catch(err=>console.log(err))
 }
 
 
