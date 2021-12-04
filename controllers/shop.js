@@ -5,18 +5,46 @@ const fs=require('fs');
 const PDFDOCUMENT=require('pdfkit')
 const path = require('path');
 
+let ITEMS_PER_PAGE=2;
+
 exports.getProducts = (req,res,next) => {
+    const page=+req.query.page || 1;
+    let totalItems;
     Product.find()
-    // .select('title price')
-    // .populate('userId','name email')
-    .then(products=>{
-            console.log(products)
-            res.render('shop/product-list',{pro:products , doc:'Product List', path:'/products'});
+    .countDocuments()
+    .then(numProducts=>{
+        totalItems=numProducts;
+        return Product.find()
+        .skip((page-1)*ITEMS_PER_PAGE)
+        .limit(ITEMS_PER_PAGE)
+    })
+    .then(
+        products=>{
+            res.render('shop/product-list',{
+                pro:products , 
+                doc:'Product List', 
+                path:'/products',
+                currentPage:page,
+                hasNextPage:ITEMS_PER_PAGE*page<totalItems,
+                hasPreviousPage:page>1,
+                nextPage:page+1,
+                previousPage:page-1,
+                lastPage:Math.ceil(totalItems/ITEMS_PER_PAGE)
+            });
         }
     )
     .catch(err=>{
         console.log(err);
     })
+    // Product.find()
+    // .then(products=>{
+    //         console.log(products)
+    //         res.render('shop/product-list',{pro:products , doc:'Product List', path:'/products'});
+    //     }
+    // )
+    // .catch(err=>{
+    //     console.log(err);
+    // })
 };
 
 
@@ -34,9 +62,29 @@ exports.getProduct =(req,res,next) =>{
 
 
 exports.getIndex = (req,res,next) => {
-    Product.find().then(
+    const page=+req.query.page || 1;
+    let totalItems;
+    Product.find()
+    .countDocuments()
+    .then(numProducts=>{
+        totalItems=numProducts;
+        return Product.find()
+        .skip((page-1)*ITEMS_PER_PAGE)
+        .limit(ITEMS_PER_PAGE)
+    })
+    .then(
         products=>{
-            res.render('shop/index',{pro:products , doc:'My Shop', path:'/index'});
+            res.render('shop/index',{
+                pro:products , 
+                doc:'My Shop', 
+                path:'/index',
+                currentPage:page,
+                hasNextPage:ITEMS_PER_PAGE*page<totalItems,
+                hasPreviousPage:page>1,
+                nextPage:page+1,
+                previousPage:page-1,
+                lastPage:Math.ceil(totalItems/ITEMS_PER_PAGE)
+            });
         }
     )
     .catch(err=>{
