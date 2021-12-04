@@ -2,11 +2,7 @@ const User=require('../models/user')
 const bcrypt=require('bcryptjs');
 const crypto=require('crypto');
 require('dotenv').config();
-
-//insitialise nodemailer
-const nodemailer=require('nodemailer')
-const sendgridTransport=require('nodemailer-sendgrid-transport')
-
+const { validationResult }=require('express-validator')
 
 
 exports.getLogin = (req,res,next) => {
@@ -23,7 +19,9 @@ exports.getLogin = (req,res,next) => {
     res.render('auth/login',{
         doc:'Login', 
         path:'/login',
-        errorMessage:message
+        errorMessage:message,
+        oldInput:{email:"",password:""},
+        validationErrors:[]
     });
 };
 
@@ -31,12 +29,28 @@ exports.getLogin = (req,res,next) => {
 exports.postLogin = (req,res,next) => {
     const email=req.body.email;
     const password=req.body.password;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+    return res.render('auth/login', {
+      path: '/login',
+      doc: 'Login',
+      errorMessage: errors.array()[0].msg,
+      oldInput:{email:email,password:password},
+      validationErrors:errors.array()
+    });
+  }
     User.findOne({email:email})
     .then(user=>{
         if(!user)
         {
             req.flash('error','Invalid Email or Password');
-            return res.redirect('/login');
+            return res.render('auth/login', {
+                path: '/login',
+                doc: 'Login',
+                errorMessage:'Invalid Email or Password' ,
+                oldInput:{email:email,password:password},
+                validationErrors:[]
+            });
         }
         bcrypt.compare(password,user.password)
         .then(doMatch=>{
@@ -49,15 +63,24 @@ exports.postLogin = (req,res,next) => {
                     res.redirect('/');
                 });
             }
-            req.flash('error','Invalid Email or Password');
-            res.redirect('/login');
+            // req.flash('error','Invalid Email or Password');
+            // res.redirect('/login');
+            return res.render('auth/login', {
+                path: '/login',
+                doc: 'Login',
+                errorMessage:'Invalid Email or Password' ,
+                oldInput:{email:email,password:password},
+                validationErrors:[]
+            });
         })
         .catch(err=>{
             res.redirect('/login');
         })
     })
     .catch(err=>{
-        console.log(err);
+        const error=new Error(err);
+        error.httpStatusCode=500;
+        return next(error)
     })
 };
 
@@ -81,7 +104,9 @@ exports.getSignup = (req, res, next) => {
       path: '/signup',
       doc: 'Signup',
       isAuthenticated: false,
-      errorMessage:message
+      errorMessage:message,
+      oldInput:{email:"",password:"",confirmPassword:""},
+      validationErrors:[]
     });
  };
 
@@ -89,92 +114,42 @@ exports.getSignup = (req, res, next) => {
       const email=req.body.email;
       const password=req.body.password;
       const confirmPassword=req.body.confirmPassword;
-      User.findOne({email:email})
-        .then(userDoc=>{
-            if(userDoc)
-            {
-                req.flash('error','Email is already registered');
-                return res.redirect('/signup');
-            }
-            else{
-                return bcrypt.hash(password,12)
-                .then(hashedPassword=>{
-                    const user=new User({
-                        email:email,
-                        password:hashedPassword,
-                        cart:{items:[]}
-                    });
-                    return user.save();
-                })
-                .then(result=>{
-                    res.redirect('/login');
-                    return transporter.sendMail({
-                        to:email,
-                        from:'ecommerce@gmail.com',
-                        subject:'Registration successfull',
-                        html:'<h1>Signed up</h1>'
-                    });
-                })
-                .catch(err=>{
-                    console.log(err);
-                })
-            }
+      const errors=validationResult(req);
+      if(!errors.isEmpty())
+      {
+          console.log(errors)
+          return res.status(422).render('auth/signup', {
+            path: '/signup',
+            doc: 'Signup',
+            isAuthenticated: false,
+            errorMessage:errors.array()[0].msg,
+            oldInput:{email:email,password:password,confirmPassword:req.body.confirmPassword},
+            validationErrors:errors.array()
+          })
+      }
+        bcrypt.hash(password,12)
+        .then(hashedPassword=>{
+            const user=new User({
+            email:email,
+            password:hashedPassword,
+            cart:{items:[]}
+        });
+            return user.save();
+        })
+        .then(result=>{
+            res.redirect('/login');
+            return transporter.sendMail({
+                to:email,
+                from:'ecommerce@gmail.com',
+                subject:'Registration successfull',
+                html:'<h1>Signed up</h1>'
+            });
         })
         .catch(err=>{
-            console.log(err);
+            const error=new Error(err);
+            error.httpStatusCode=500;
+            return next(error)
         })
   };
 
 
-exports.getReset = (req, res, next) => {
-    let message=req.flash('error');
-    if(message.length>0)
-    {
-        message=message[0];
-    }
-    else
-    {
-        message=null;
-    }
-    res.render('auth/reset',{
-    doc:'Reset Password', 
-    path:'/reset',
-    errorMessage:message
-});
-}
-
-exports.postReset=(req,res,next)=>{
-    crypto.randomBytes(32,(err,buffer)=>{
-        if(err)
-        {
-            console.log(err);
-            return res.redirect('/reset');
-        }
-        const token=buffer.toString('hex');
-        User.findOne({email:req.body.email})
-        .then(user=>{
-            if(!user){
-                req.flash('error','No user with that email id found');
-                return res.redirect('/reset')
-            }
-            user.resetToken=token;
-            user.resetTokenExpiration=Date.now()+360000;
-            return user.save();
-        })
-        .then(result=>{
-            res.redirect('/');
-            return transporter.sendMail({
-            to:req.body.email,
-            from:'ecommerce@gmail.com',
-            subject:'Password Reset',
-            html:`
-            <p>You requested a password reset</p>
-            <p>Click on the <a href="http://localhost:3000/reset/${token}">link</a> set a new password</p>
-            `
-            }); 
-        })
-        .catch(err=>{
-                console.log(err)
-        })
-    })
-}
