@@ -21,3 +21,9 @@
 * Node.js
 * Express.js
 * MongoDB
+
+### Screenshots
+<img src="public/e-com1.png" alt="Logo">
+<img src="public/e-com2.png" alt="Logo">
+<img src="public/e-com3.png" alt="Logo">
+<img src="public/e-com4.png" alt="Logo">
