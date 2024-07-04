@@ -15,7 +15,7 @@
 * Admin capabilities include CRUD functionalities for products, enabling administrators to efficiently add, edit, and manage product listings. 
 * Error handling mechanisms ensure robustness, with tailored error pages for different HTTP status codes. 
 
-### Technology Used
+### Tech Stack
 
 * EJS
 * Node.js
